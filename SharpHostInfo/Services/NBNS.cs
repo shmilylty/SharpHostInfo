@@ -10,6 +10,8 @@ namespace SharpHostInfo.Services
 {
     class NBNS
     {
+        static Dictionary<string, string> MACDict = new Dictionary<string, string>();
+
         #region NetBIOS NameQuery
         static byte[] NameQuery =
         {
@@ -76,7 +78,7 @@ namespace SharpHostInfo.Services
                 #region identify device via mac
 
                 string Organization = "";
-                Organization = NBNSResolver.MACParser(MAC);
+                Organization = NBNSResolver.MACParser(MAC, MACDict);
                 #endregion
 
                 Console.WriteLine(String.Format("{0,-15}", address) + String.Format("{0,-30}", GroupName + '\\' + ComputerName)
@@ -127,8 +129,9 @@ namespace SharpHostInfo.Services
         }
 
 
-        internal void Execute(HashSet<string> ips, int port, int mtime)
+        internal void Execute(HashSet<string> ips, int port, int mtime, Dictionary<string, string> macdict)
         {
+            MACDict = macdict;
             try
             {
                 UdpClient = new UdpClient(0);
@@ -136,7 +139,6 @@ namespace SharpHostInfo.Services
                 uint IOC_VENDOR = 0x18000000;
                 uint SIO_UDP_CONNRESET = IOC_IN | IOC_VENDOR | 12;
                 UdpClient.Client.IOControl((int)SIO_UDP_CONNRESET, new byte[] { Convert.ToByte(false) }, null);
-                /*Console.FormatSSPKey("[*]Start udp client ...");*/
                 StartReceive();
 
                 foreach (string ip in ips)

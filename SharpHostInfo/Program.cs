@@ -28,13 +28,15 @@ namespace SharpHostInfo
             }
             String service = parsedArgs.Service.ToLower();
 
+            Dictionary<string, string> macdict = Options.GetMACDict();
+
             // 开始NBNS服务探测
             if (service.Contains("nbns"))
             {
                 Console.WriteLine("");
                 Writer.Info("Start NBNS service detection\r\n");
                 NBNS nbns = new NBNS();
-                nbns.Execute(ips, 137, timeout);
+                nbns.Execute(ips, 137, timeout, macdict);
             }
 
             ThreadPool.SetMaxThreads(Helpers.Options.SetMaxThreads(parsedArgs), 1);
