@@ -13,52 +13,53 @@ namespace SharpHostInfo.Lib
     {
         public static HashSet<string> Parser(String target)
         {
-            HashSet<string> list_target = new HashSet<string>();
+            HashSet<string> ips = new HashSet<string>();
             // 处理 ipstartIndex
             if (!"".Equals(target))
             {
-                // 如果输入单个 IP
-                if (Regex.IsMatch(target, "^([\\w\\-\\.]{1,100}[a-zA-Z]{1,8})$|^(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})$"))
+                // 如果输入文本文件
+                if (File.Exists(target))
                 {
-                    list_target.Clear();
-                    list_target.Add(target);
+                    ReadFileToList(target, ref ips);
+                }
+                // 如果输入单个 IP
+                else if (Regex.IsMatch(target, "^([\\w\\-\\.]{1,100}[a-zA-Z]{1,8})$|^(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})$"))
+                {
+                    ips.Clear();
+                    ips.Add(target);
                 }
                 // 如果同时输入多个
                 else if (target.Contains(','))
                 {
-                    list_target.Clear();
+                    ips.Clear();
                     foreach (var list in target.Split(',').ToList())
-                        list_target.Add(list);
+                        ips.Add(list);
                 }
                 // 如果输入自定义 IP 段，仅支持 B 段自定义范围（ex: 192.168.1.1-192.168.20.2）
                 else if (Regex.IsMatch(target, "^\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\-\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}$"))
                 {
-                    B(target, ref list_target);
+                    B(target, ref ips);
                 }
                 // 如果输入 Prefix(cidr) 格式
                 else if (Regex.IsMatch(target, "^([\\w\\-\\.]{1,100}[a-zA-Z]{1,8})$|^(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\/\\d{1,3})$"))
                 {
-                    CIDR(target, ref list_target);
-                }
-                else if (target.EndsWith(".txt"))
-                {
-                    readFileToList(target, ref list_target);
+                    CIDR(target, ref ips);
                 }
 
-                if (list_target.Count <= 0)
+                if (ips.Count <= 0)
                 {
                     Info.ShowUsage();
                     Environment.Exit(0);
                 }
             }
 
-            return list_target;
+            return ips;
         }
 
-        private static void B(String txt_target, ref HashSet<string> list_target)
+        private static void B(String target, ref HashSet<string> ips)
         {
-            list_target.Clear();
-            string[] arrayall = txt_target.Split(new char[]
+            ips.Clear();
+            string[] arrayall = target.Split(new char[]
             {
                         '-'
             });
@@ -104,7 +105,7 @@ namespace SharpHostInfo.Lib
                                                     ".",
                                                     j.ToString()
                                         });
-                                        list_target.Add(item);
+                                        ips.Add(item);
                                     }
                                 }
                             }
@@ -132,81 +133,16 @@ namespace SharpHostInfo.Lib
                                                 ".",
                                                 k.ToString()
                                     });
-                                    list_target.Add(item2);
+                                    ips.Add(item2);
                                 }
                             }
                         }
                     }
-
-                    //if (num1_2 <= num2_2
-                    //    && num1_2 <= 255 && num1_3 <= 255 && num1_4 <= 255
-                    //    && num2_2 <= 255 && num2_3 <= 255 && num2_4 <= 255)
-                    //{
-                    //    // B 段
-                    //    if (num1_2 == num2_2)
-                    //    {
-                    //        for (int i = num1_3; i <= num2_3; i++)
-                    //        {
-                    //            if (num1_3 == num2_3)
-                    //            {
-                    //                if (num1_4 <= num2_4)
-                    //                {
-                    //                    for (int j = num1_4; j <= num2_4; j++)
-                    //                    {
-                    //                        string item = string.Concat(new string[]
-                    //                        {
-                    //                                array2[0],
-                    //                                ".",
-                    //                                array2[1],
-                    //                                ".",
-                    //                                array2[2],
-                    //                                ".",
-                    //                                j.ToString()
-                    //                        });
-                    //                        list_target.Add(item);
-                    //                    }
-                    //                }
-                    //            }
-                    //            else
-                    //            {
-                    //                int num5 = 0;
-                    //                int num6 = 255;
-                    //                if (i == num1_3)
-                    //                {
-                    //                    num5 = num1_4;
-                    //                }
-                    //                if (i == num2_3)
-                    //                {
-                    //                    num6 = num2_4;
-                    //                }
-                    //                for (int k = num5; k <= num6; k++)
-                    //                {
-                    //                    string item2 = string.Concat(new string[]
-                    //                    {
-                    //                            array2[0],
-                    //                            ".",
-                    //                            array2[1],
-                    //                            ".",
-                    //                            i.ToString(),
-                    //                            ".",
-                    //                            k.ToString()
-                    //                    });
-                    //                    list_target.Add(item2);
-                    //                }
-                    //            }
-                    //        }
-                    //    }
-                    //    // A 段
-                    //    else if (num1_2 < num2_2)
-                    //    {
-
-                    //    }
-                    //}
                 }
             }
         }
         #region cidr parser
-        private static void CIDR(String txt_target, ref HashSet<string> list_target)
+        private static void CIDR(String target, ref HashSet<string> list_target)
         {
 
             uint ip,    /* ip address */
@@ -214,10 +150,10 @@ namespace SharpHostInfo.Lib
             broadcast,  /* Broadcast address */
             network;    /* Network address */
             int bits;
-            string[] elements = txt_target.Split(new Char[] { '/' });
+            string[] elements = target.Split(new Char[] { '/' });
             if (elements.Length == 1)
             {
-                list_target.Add(txt_target);
+                list_target.Add(target);
             }
             ip = IP2Int(elements[0]);
             bits = Convert.ToInt32(elements[1]);
@@ -257,9 +193,9 @@ namespace SharpHostInfo.Lib
         }
         #endregion
 
-        public static void readFileToList(String path, ref HashSet<string> list_target)
+        public static void ReadFileToList(String path, ref HashSet<string> ips)
         {
-            list_target.Clear();
+            ips.Clear();
             FileStream fs_dir = null;
             StreamReader reader = null;
             try
@@ -274,7 +210,7 @@ namespace SharpHostInfo.Lib
                 {
                     if (!lineStr.Equals(""))
                     {
-                        list_target.Add(lineStr);
+                        ips.Add(lineStr);
                     }
                 }
             }

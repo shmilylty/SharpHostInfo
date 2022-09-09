@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpHostInfo.Helpers;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -12,21 +13,36 @@ namespace SharpHostInfo.Argument
             try
             {
                 int idx = 0;
-                foreach (var argument in args)
+                string key = "";
+                foreach (var arg in args)
                 {
-                    idx = argument.IndexOf('=');
-                    if (idx > 0)
+                    // 长参数情况 比如--target=192.168.1.1 --thread=100
+                    if (arg.Contains("--"))
                     {
-                        arguments[argument.Substring(0, idx)] = argument.Substring(idx + 1);
+                        idx = arg.IndexOf("=");
+                        if (idx > 0)
+                        {
+                            key = arg.Substring(0, idx);
+                            arguments[key] = arg.Substring(idx + 1);
+                            continue;
+                        }
+                        else 
+                        { 
+                            Writer.Error("Parameter error"); 
+                        }
+                    }
+
+                    // 短参数情况 比如-i 192.168.1.1 -t 100
+                    if (arg.Contains("-"))
+                    {
+                        key = arg;
+                        arguments[key] = "";
                         continue;
                     }
-                    idx = argument.IndexOf(' ');
-                    if (idx > 0)
+                    if (!string.IsNullOrEmpty(key))
                     {
-                        arguments[argument.Substring(0, idx)] = argument.Substring(idx + 1);
-                        continue;
+                        arguments[key] = arg;
                     }
-                    arguments[argument] = string.Empty;
                 }
 
                 return ParserResult.Success(arguments);

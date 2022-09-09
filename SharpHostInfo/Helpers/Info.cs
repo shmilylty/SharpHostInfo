@@ -26,17 +26,17 @@ USAGE:
    SharpHostInfo.exe [arguments...]
 
 ARGUMENTS:
-   --target, -i   The IP address of the target
-   --thread, -t   Number of detection threads (default: 20)
-   --timeout, -m  Thread timeout millisecond (default: 1000)
-   --service, -s  Specify which services to use to detect (default: nbns,smb)
+   --target,  -i   The IP address of the target
+   --thread,  -t   Number of detection threads (default: 20)
+   --timeout, -m   Thread timeout millisecond (default: 1000)
+   --service, -s   Specify which services to use to detect (default: nbns,smb)
 
 EXAMPLES:
    SharpHostInfo.exe --target=192.168.1.1
-   SharpHostInfo.exe --target=ip.txt --threads=40 -s=nbns,wmi
+   SharpHostInfo.exe --target=ip.txt --threads=40 -s nbns,wmi
    SharpHostInfo.exe --target=192.168.1.1-192.168.255.255 --timeout=1000
-   SharpHostInfo.exe -i=192.168.1.1,192.168.1.2 -s=nbns
-   SharpHostInfo.exe -i=192.168.1.1/24 -t=20 -m 1000 -s=wmi
+   SharpHostInfo.exe -i 192.168.1.1,192.168.1.2 -s nbns
+   SharpHostInfo.exe -i 192.168.1.1/20 -t 200 -m 1000 -s wmi
 ";
             Console.WriteLine(usage);
             Environment.Exit(0);
