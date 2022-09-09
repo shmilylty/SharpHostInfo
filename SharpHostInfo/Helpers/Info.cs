@@ -27,7 +27,7 @@ USAGE:
 
 ARGUMENTS:
    --target,  -i   The IP address of the target (Required)
-   --thread,  -t   Number of detection threads (Default: 20)
+   --thread,  -t   Number of detection threads (Default: 100)
    --timeout, -m   Thread timeout millisecond (Default: 500)
    --service, -s   Specify which services to use to detect (Default: nbns,smb)
 
