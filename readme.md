@@ -91,6 +91,8 @@ EXAMPLES:
 
 ## 😽 鸣谢
 
+[SharpNTLMSSPExtract](https://github.com/RowTeam/SharpNTLMSSPExtract)
+
 感谢网上开源的相关项目！
 
 ## 📜 免责声明
