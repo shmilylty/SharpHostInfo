@@ -58,20 +58,20 @@ namespace SharpHostInfo
             // SMB服务探测
             if (service.Contains("smb"))
             {
-                HashSet<string> toDetectSMBIPs = new HashSet<string>();
-                //string[] toDetectSMBIPs = new string[] { };
+                //HashSet<string> toDetectSMBIPs = new HashSet<string>();
+                string[] toDetectSMBIPs = new string[]{};
                 // 只进行SMB服务探测的情况
                 if (service == "smb")
                 {
-                    toDetectSMBIPs = ips.ToHashSet();
+                    toDetectSMBIPs = ips.ToArray();
                 }
                 // 其他情况则探测上一个协议探测失败的IP
                 else
                 {
-                    toDetectSMBIPs = failedSet.ToHashSet();
+                    toDetectSMBIPs = failedSet.ToArray();
                     failedSet.Clear();
                 }
-                var smbCount = new CountdownEvent(toDetectSMBIPs.Count);
+                var smbCount = new CountdownEvent(toDetectSMBIPs.Length);
                 Console.WriteLine("");
                 Writer.Info("Start SMB service detection\r\n");
                 foreach (string ip in toDetectSMBIPs)
@@ -93,19 +93,20 @@ namespace SharpHostInfo
             // WMI服务探测
             if (parsedArgs.Service.Contains("wmi"))
             {
-                HashSet<string> toDetectWMIIPs = new HashSet<string>();
+                // HashSet<string> toDetectWMIIPs = new HashSet<string>();
+                string[] toDetectWMIIPs = new string[] { };
                 // 只进行SMB服务探测的情况
                 if (service == "wmi")
                 {
-                    toDetectWMIIPs = ips.ToHashSet();
+                    toDetectWMIIPs = ips.ToArray();
                 }
                 // 其他情况则探测上一个协议探测失败的IP
                 else
                 {
-                    toDetectWMIIPs = failedSet.ToHashSet();
+                    toDetectWMIIPs = failedSet.ToArray();
                     failedSet.Clear();
                 }
-                var WMICount = new CountdownEvent(toDetectWMIIPs.Count);
+                var WMICount = new CountdownEvent(toDetectWMIIPs.Length);
                 Console.WriteLine("");
                 Writer.Info("Start WMI service detection\r\n");
                 foreach (string ip in toDetectWMIIPs)
@@ -126,6 +127,114 @@ namespace SharpHostInfo
                 }
                 WMICount.Wait();
             }
+
+            /*// NBNS服务探测
+            if (service.Contains("nbns"))
+            {
+                Console.WriteLine("");
+                Writer.Info("Start NBNS service detection\r\n");
+                foreach (string ip in ips)
+                {
+                    ThreadPool.QueueUserWorkItem(status =>
+                    {
+                        NBNS nbns = new NBNS();
+                        bool success = nbns.Execute(ip, 137, timeout, macdict);
+                        if (!success)
+                        {
+                            failedSet.Add(ip);
+                        }
+                    });
+                }
+                // 主线程睡眠一会儿让线程池中的子线程跑起来
+                Thread.Sleep(500);
+                // 主线程等待所有线程池中的子线程结束
+                while (true)
+                {
+                    *//*
+                     GetAvailableThreads()：检索由 GetMaxThreads 返回的线程池线程的最大数目和当前活动数目之间的差值。
+                     而GetMaxThreads 检索可以同时处于活动状态的线程池请求的数目。
+                     通过最大数目减可用数目就可以得到当前活动线程的数目，如果为零，那就说明没有活动线程，说明所有线程运行完毕。
+                     *//*
+                    ThreadPool.GetMaxThreads(out int maxWorkerThreads, out int portThreads);
+                    ThreadPool.GetAvailableThreads(out int workerThreads, out portThreads);
+                    if (maxWorkerThreads - workerThreads == 0)
+                    {
+                        break;
+                    }
+                }
+            }*/
+            /*// NBNS服务探测
+            List<ManualResetEvent> nbnsEvents = new List<ManualResetEvent>();
+            if (service.Contains("nbns"))   
+            {
+                Console.WriteLine("");
+                Writer.Info("Start NBNS service detection\r\n");
+                foreach (string ip in ips)
+                {
+                    ManualResetEvent mre = new ManualResetEvent(false);
+                    nbnsEvents.Add(mre);
+                    ThreadPool.QueueUserWorkItem(status =>
+                    {
+                        NBNS nbns = new NBNS();
+                        bool success = nbns.Execute(ip, 137, timeout, macdict);
+                        mre.Set();
+                        if (!success)
+                        {
+                            failedSet.Add(ip);
+                        }
+                    });
+                }
+                WaitHandle.WaitAll(nbnsEvents.ToArray());
+            }*/
+
+            /*// NBNS服务探测
+            if (service.Contains("nbns"))
+            {
+                var nbnsCount = new CountdownEvent(ips.Count);
+                Console.WriteLine("");
+                Writer.Info("Start NBNS service detection\r\n");
+                foreach (string ip in ips)
+                {
+                    ThreadPool.QueueUserWorkItem(status =>
+                    {
+                        NBNS nbns = new NBNS();
+                        bool success = nbns.Execute(ip, 137, timeout, macdict);
+                        nbnsCount.Signal();
+                        if (!success)
+                        {
+                            failedSet.Add(ip);
+                        }
+                    });
+                }
+                nbnsCount.Wait();
+            }*/
+            // NBNS服务探测
+            /*if (service.Contains("nbns"))
+            {
+                Console.WriteLine("");
+                Writer.Info("Start NBNS service detection\r\n");
+                ManualResetEvent mre = new ManualResetEvent(false);
+                int count = ips.Count;
+                foreach (string ip in ips)
+                {
+                    ThreadPool.QueueUserWorkItem(status =>
+                    {
+                        count--;
+                        NBNS nbns = new NBNS();
+                        bool success = nbns.Execute(ip, 137, timeout, macdict);
+                        if (!success)
+                        {
+                            failedSet.Add(ip);
+                        }
+                        Thread.Sleep(100);
+                        if (count == 0)
+                        {
+                            mre.Set();
+                        }
+                    });
+                }
+                mre.WaitOne();
+            }*/
         }
 
         static void Main(string[] args)

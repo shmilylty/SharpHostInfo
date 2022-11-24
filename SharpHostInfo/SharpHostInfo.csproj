@@ -97,6 +97,7 @@
     <PlatformTarget>ARM64</PlatformTarget>
     <LangVersion>7.3</LangVersion>
     <ErrorReport>prompt</ErrorReport>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|ARM64'">
     <OutputPath>bin\ARM64\Release\</OutputPath>
@@ -106,6 +107,7 @@
     <PlatformTarget>ARM64</PlatformTarget>
     <LangVersion>7.3</LangVersion>
     <ErrorReport>prompt</ErrorReport>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -115,7 +117,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Lib\NBNSResolver.cs" />
-    <None Include="Services\NBNS.bak" />
     <Compile Include="Services\NBNS.cs" />
     <Compile Include="Services\SMB.cs" />
     <Compile Include="Services\WMI.cs" />
