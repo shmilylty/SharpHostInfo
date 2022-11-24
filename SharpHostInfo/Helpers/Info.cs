@@ -12,7 +12,7 @@ namespace SharpHostInfo.Helpers
 \ \| '_ \ / _` | '__| '_ \ / /_/ / _ \/ __| __|  / /\/ '_ \| |_ / _ \ 
 _\ \ | | | (_| | |  | |_) / __  / (_) \__ \ |_/\/ /_ | | | |  _| (_) |
 \__/_| |_|\__,_|_|  | .__/\/ /_/ \___/|___/\__\____/ |_| |_|_|  \___/ 
-                    |_|           Version: 0.0.1                                
+                    |_|           Version: 0.0.2                                
 ");
         }
 
@@ -29,7 +29,7 @@ ARGUMENTS:
    --target,  -i   The IP address of the target Required)
    --thread,  -t   Number of detection threads(Default: 100)
    --timeout, -m   Detection timeout millisecond(Default: 500)
-   --service, -s   Specify which services to use to detect(Default: nbns,smb)
+   --service, -s   Specify which services to use to detect(Default: nbns,smb,wmi)
 
 EXAMPLES:
    SharpHostInfo.exe --target=192.168.1.1

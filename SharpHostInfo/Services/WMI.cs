@@ -14,7 +14,7 @@ namespace SharpHostInfo.Services
             return NDR64SyntaxStr.Contains("33057171BABE37498319B5DBEF9CCC36") ? 64 : 86;
         }
 
-        internal void Execute(string host, int port, int mtime)
+        internal bool Execute(string host, int port, int mtime)
         {
             var _SSPKey = new SSPKey();
             _SSPKey.Target = host;
@@ -25,10 +25,11 @@ namespace SharpHostInfo.Services
             _SSPKey.NDR64Syntax = ParsingNDR64Syntax(response);
 
             response = TimeoutSocket.Send(host, port, mtime, "wmi1");
-            if (response.Length == 0) return;
+            if (response.Length == 0) return false;
 
             NTLMSSPExtract.ParsingSocketStremResponse(ref response, ref _SSPKey);
             Helpers.SSPKeyOutput.Print(_SSPKey);
+            return true;
         }
     }
 }

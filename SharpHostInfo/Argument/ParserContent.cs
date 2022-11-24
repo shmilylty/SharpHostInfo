@@ -19,7 +19,7 @@ namespace SharpHostInfo.Argument
             }
             if (string.IsNullOrEmpty(Service))
             {
-                Service = "nbns,smb";
+                Service = "nbns,smb,wmi";
             }
             Target = ArgumentParser(arguments, "-i");
             if (string.IsNullOrEmpty(Target))

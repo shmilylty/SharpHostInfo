@@ -14,7 +14,7 @@ namespace SharpHostInfo
     {
         private static void MainExecute(ParserContent parsedArgs)
         {
-            Helpers.Info.ShowLogo();
+            Info.ShowLogo();
             Writer.Info($"Detect target: {parsedArgs.Target}");
             Writer.Info($"Detect Service: {parsedArgs.Service}");
             Writer.Info($"Detect thead: {parsedArgs.Thread}");
@@ -30,53 +30,96 @@ namespace SharpHostInfo
 
             Dictionary<string, string> macdict = Options.GetMACDict();
 
-            // 开始NBNS服务探测
+            ThreadPool.SetMaxThreads(Options.SetMaxThreads(parsedArgs), 1);
+            HashSet<string> failedSet = new HashSet<string>();
+
+            // NBNS服务探测
             if (service.Contains("nbns"))
             {
+                var nbnsCount = new CountdownEvent(ips.Count);
                 Console.WriteLine("");
                 Writer.Info("Start NBNS service detection\r\n");
-                NBNS nbns = new NBNS();
-                nbns.Execute(ips, 137, timeout, macdict);
-            }
-
-            ThreadPool.SetMaxThreads(Helpers.Options.SetMaxThreads(parsedArgs), 1);
-
-            // 开始SMB服务探测
-            var smbCount = new CountdownEvent(ips.Count);
-            if (parsedArgs.Service.Contains("smb"))
-            {
-                Console.WriteLine("");
-                Writer.Info("Start SMB service detection\r\n");
                 foreach (string ip in ips)
                 {
                     ThreadPool.QueueUserWorkItem(status =>
                     {
-                        if (parsedArgs.Service.Contains("smb"))
+                        NBNS nbns = new NBNS();
+                        bool success = nbns.Execute(ip, 137, timeout, macdict);
+                        nbnsCount.Signal();
+                        if (!success)
                         {
-
-                            SMB smb = new SMB();
-                            smb.Execute(ip, 445, timeout);
+                            failedSet.Add(ip);
                         }
+                    });
+                }
+                nbnsCount.Wait();
+            }
+
+            // SMB服务探测
+            if (service.Contains("smb"))
+            {
+                HashSet<string> toDetectSMBIPs = new HashSet<string>();
+                //string[] toDetectSMBIPs = new string[] { };
+                // 只进行SMB服务探测的情况
+                if (service == "smb")
+                {
+                    toDetectSMBIPs = ips.ToHashSet();
+                }
+                // 其他情况则探测上一个协议探测失败的IP
+                else
+                {
+                    toDetectSMBIPs = failedSet.ToHashSet();
+                    failedSet.Clear();
+                }
+                var smbCount = new CountdownEvent(toDetectSMBIPs.Count);
+                Console.WriteLine("");
+                Writer.Info("Start SMB service detection\r\n");
+                foreach (string ip in toDetectSMBIPs)
+                {
+                    ThreadPool.QueueUserWorkItem(status =>
+                    {
+                        SMB smb = new SMB();
+                        bool success = smb.Execute(ip, 445, timeout);
                         smbCount.Signal();
+                        if (!success)
+                        {
+                            failedSet.Add(ip);
+                        }
                     });
                 }
                 smbCount.Wait();
             }
 
-            // 开始WMI服务探测
-            var WMICount = new CountdownEvent(ips.Count);
+            // WMI服务探测
             if (parsedArgs.Service.Contains("wmi"))
             {
+                HashSet<string> toDetectWMIIPs = new HashSet<string>();
+                // 只进行SMB服务探测的情况
+                if (service == "wmi")
+                {
+                    toDetectWMIIPs = ips.ToHashSet();
+                }
+                // 其他情况则探测上一个协议探测失败的IP
+                else
+                {
+                    toDetectWMIIPs = failedSet.ToHashSet();
+                    failedSet.Clear();
+                }
+                var WMICount = new CountdownEvent(toDetectWMIIPs.Count);
                 Console.WriteLine("");
                 Writer.Info("Start WMI service detection\r\n");
-                foreach (string ip in ips)
+                foreach (string ip in toDetectWMIIPs)
                 {
                     ThreadPool.QueueUserWorkItem(status =>
                     {
                         if (parsedArgs.Service.Contains("wmi"))
                         {
                             WMI wmi = new WMI();
-                            wmi.Execute(ip, 135, timeout);
+                            bool success = wmi.Execute(ip, 135, timeout);
+                            if (!success)
+                            {
+                                failedSet.Add(ip);
+                            }
                         }
                         WMICount.Signal();
                     });
@@ -89,16 +132,16 @@ namespace SharpHostInfo
         {
             if (args.Length < 1 || args.Contains("-h") || args.Contains("--help"))
             {
-                Helpers.Info.ShowLogo();
-                Helpers.Info.ShowUsage();
+                Info.ShowLogo();
+                Info.ShowUsage();
                 return;
             }
             // 尝试解析命令行参数
             var parsed = Parser.Parse(args);
             if (parsed.ParsedOk == false)
             {
-                Helpers.Info.ShowLogo();
-                Helpers.Info.ShowUsage();
+                Info.ShowLogo();
+                Info.ShowUsage();
                 return;
             }
             Stopwatch stopwatch = new Stopwatch();

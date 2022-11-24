@@ -6,7 +6,7 @@ namespace SharpHostInfo.Services
 {
     public class SMB
     {
-        internal void Execute(string ip, int port, int mtime)
+        internal bool Execute(string ip, int port, int mtime)
         {
             var _SSPKey = new SSPKey();
             _SSPKey.Target = ip;
@@ -19,7 +19,7 @@ namespace SharpHostInfo.Services
                 flag = "smb2";
                 response = TimeoutSocket.Send(ip, port, mtime, "smb2");
             }
-            if (response.Length == 0) return;
+            if (response.Length == 0) return false;
 
             NTLMSSPExtract.ParsingSocketStremResponse(ref response, ref _SSPKey);
 
@@ -33,6 +33,7 @@ namespace SharpHostInfo.Services
                 }
             }
             Helpers.SSPKeyOutput.Print(_SSPKey);
+            return true;
         }
     }
 }

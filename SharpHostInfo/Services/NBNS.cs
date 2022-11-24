@@ -1,5 +1,6 @@
 ﻿using SharpHostInfo.Lib;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -8,7 +9,7 @@ using System.Threading;
 
 namespace SharpHostInfo.Services
 {
-    class NBNS
+    public class NBNS
     {
         static Dictionary<string, string> MACDict = new Dictionary<string, string>();
 
@@ -25,23 +26,9 @@ namespace SharpHostInfo.Services
         };
         #endregion
 
-        #region  UDP Client Config Params
-        static bool IsUdpcRecvStart = false;
-        static UdpClient UdpClient = null;
-        static IPEndPoint RemoteIPEndPoint = null;
-        #endregion
-
-        public static void StartReceive()
+        public static void ResponseResolver(byte[] NameQueryResponse, IPAddress address)
         {
-            RemoteIPEndPoint = new IPEndPoint(IPAddress.Any, 137);
-            UdpState udpState = new UdpState(UdpClient, RemoteIPEndPoint);
-            IsUdpcRecvStart = true;
-            UdpClient.BeginReceive(RecieveMessage, udpState);
-        }
-
-        public static void NameQueryResponseResolver(byte[] NameQueryResponse, IPAddress address)
-        {
-            nb_host_info HostInfo = new nb_host_info();
+            nb_host_info HostInfo;
             try
             {
                 HostInfo = NBNSResolver.NBNSParser(NameQueryResponse, NameQueryResponse.Length);
@@ -90,71 +77,35 @@ namespace SharpHostInfo.Services
             }
         }
 
-        public static void RecieveMessage(IAsyncResult asyncResult)
-        {
-            UdpState udpState = (UdpState)asyncResult.AsyncState;
-            if (udpState != null)
-            {
-                UdpClient udpClient = udpState.UdpClient;
-                IPEndPoint iPEndPoint = udpState.IP;
-                if (IsUdpcRecvStart)
-                {
-                    byte[] NameQueryResponse = udpClient.EndReceive(asyncResult, ref iPEndPoint);
-                    udpClient.BeginReceive(RecieveMessage, udpState);
-                    if (NameQueryResponse.Length != 0)
-                    {
-                        NameQueryResponseResolver(NameQueryResponse, iPEndPoint.Address);
-                    }
-                }
-            }
-        }
-
-        public class UdpState
-        {
-            private UdpClient udpclient = null;
-            public UdpClient UdpClient
-            {
-                get { return udpclient; }
-            }
-            private IPEndPoint ip;
-            public IPEndPoint IP
-            {
-                get { return ip; }
-            }
-            public UdpState(UdpClient udpclient, IPEndPoint ip)
-            {
-                this.udpclient = udpclient;
-                this.ip = ip;
-            }
-        }
-
-
-        internal void Execute(HashSet<string> ips, int port, int mtime, Dictionary<string, string> macdict)
+        internal bool Execute(string ip, int port, int timeout, Dictionary<string, string> macdict)
         {
             MACDict = macdict;
             try
             {
-                UdpClient = new UdpClient(0);
-                uint IOC_IN = 0x80000000;
-                uint IOC_VENDOR = 0x18000000;
-                uint SIO_UDP_CONNRESET = IOC_IN | IOC_VENDOR | 12;
-                UdpClient.Client.IOControl((int)SIO_UDP_CONNRESET, new byte[] { Convert.ToByte(false) }, null);
-                StartReceive();
-
-                foreach (string ip in ips)
+                IPEndPoint remoteIPEndPoint = new IPEndPoint(IPAddress.Parse(ip), port);
+               
+                byte[] response = new byte[1024];
+                using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
                 {
-                    IPEndPoint remoteIPEndPoint = new IPEndPoint(IPAddress.Parse(ip), 137);
-                    UdpClient.Send(NameQuery, NameQuery.Length, remoteIPEndPoint);
+                    socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, timeout);
+                    socket.Connect(remoteIPEndPoint);
+                    socket.Send(NameQuery);
+                    socket.Receive(response);
                 }
-
-                // 睡眠3秒 等待关闭UdpClient
-                Thread.Sleep(3000);
-                IsUdpcRecvStart = false;
-                UdpClient.Close();
+                if (response.Length != 0)
+                {
+                    ResponseResolver(response, remoteIPEndPoint.Address);
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("[!] Error: {0}", ex.Message);
+                // Console.WriteLine("[!] Error: {0} {1}", ip, ex.Message);
+                return false;
             }
         }
     }
