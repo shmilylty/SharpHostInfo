@@ -22,7 +22,7 @@ SharpHostInfo正是一款应用而生的小工具，体积较小，速度极快�
 
 2. 使用默认参数进行探测
 
-   指定探测网段为192.168.1.1/24，默认使用NetBIOS和SMB服务进行探测进行自动探测，默认线程100个，默认探测超时500毫秒。
+   指定探测网段为192.168.1.1/24，默认使用NetBIOS、SMB服务和wmi服务进行探测进行自动探测，这里的自动探测是指上一轮NBNS探测失败的IP会进行下一轮SMB或WMI探测，默认线程100个，默认探测超时500毫秒。
    
     ```bash
     SharpHostInfo.exe -i 192.168.1.1/24
@@ -69,7 +69,7 @@ ARGUMENTS:
 
 EXAMPLES:
    SharpHostInfo.exe --target=192.168.1.1
-   SharpHostInfo.exe --target=ip.txt --threads=40 -s nbns,wmi
+   SharpHostInfo.exe --target=ip.txt --threads=40 -s nbns,smb,wmi
    SharpHostInfo.exe --target=192.168.1.1-192.168.255.255 --timeout=1000
    SharpHostInfo.exe -i 192.168.1.1,192.168.1.2 -s nbns
    SharpHostInfo.exe -i 192.168.1.1/20 -t 200 -m 1000 -s wmi
@@ -80,6 +80,7 @@ EXAMPLES:
 * c#编写，可内存执行，免杀友好。
 * 小巧轻便，速度极快。
 * 支持NetBIOS(默认137端口)、SMB(默认135端口)和WMI(默认135端口)服务快速探测
+* 支持探测失败IP其他协议补偿探测
 * 支持自动识别域控主机
 * 支持自动识别MAC地址对应设备
 
